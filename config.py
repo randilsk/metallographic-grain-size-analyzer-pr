@@ -24,5 +24,5 @@ PRUNE_LENGTH        = 10    # remove skeleton branches shorter than this
 GAP_CLOSE_DISTANCE  = 10    # max pixel gap to bridge in boundaries
 
 # ── Stage 5: Analysis ────────────────────────────────────
-MICRONS_PER_PIXEL   = 100 / 275   # update from your scale bar
+MICRONS_PER_PIXEL = 100 / 226   # update from your scale bar
 NUM_TEST_LINES      = 10    # intercept lines to draw

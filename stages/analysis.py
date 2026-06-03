@@ -83,10 +83,10 @@ def analyze(skeleton, image_filename="image"):
     # Mean intercept length in mm
     mean_intercept_mm = total_length_mm / total_intersections
 
-    # ASTM Grain Size Number
-    # G = (6.643856 * log10(l_bar)) - 3.288  where l_bar is in mm
+    # ASTM Grain Size Number (ASTM E112 intercept method)
+    # G = -6.6457 * log10(l_bar) - 3.298  where l_bar is in mm
     import math
-    G = (6.643856 * math.log10(mean_intercept_mm)) - 3.288
+    G = (-6.6457 * math.log10(mean_intercept_mm)) - 3.298
 
     print(f"\n{'='*50}")
     print(f"ASTM E112 Analysis: {image_filename}")

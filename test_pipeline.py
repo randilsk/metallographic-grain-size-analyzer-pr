@@ -14,7 +14,7 @@ test_images = [
 
 results = []
 for img in test_images:
-    enhanced, skeleton, markers = run_pipeline(img, show_steps=False)
+    enhanced, skeleton, markers,astm,metrics = run_pipeline(img, show_steps=False)
     metrics = compare_with_ground_truth(skeleton, img)
     if metrics:
         results.append((img, *metrics))

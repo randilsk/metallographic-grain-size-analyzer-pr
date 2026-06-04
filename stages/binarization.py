@@ -1,6 +1,7 @@
 # stages/binarization.py
 
 import cv2
+import numpy as np
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -8,19 +9,30 @@ from config import ADAPTIVE_BLOCK_SIZE, ADAPTIVE_C
 
 def binarize(enhanced):
     """
-    Stage 2: Convert enhanced grayscale image to binary.
-    Grain boundaries become white (255), grain interiors black (0).
-    Returns: binary image
+    Stage 2: Fuse adaptive threshold + Canny edges.
+    Adaptive catches broad boundary regions.
+    Canny catches subtle gradient-based boundaries.
+    Combined = better recall without killing precision.
     """
 
-    # Adaptive thresholding - handles uneven lighting
-    binary = cv2.adaptiveThreshold(
+    # Method 1 — Adaptive threshold (what we had before)
+    adaptive = cv2.adaptiveThreshold(
         enhanced,
         255,
         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY_INV,   # INV = boundaries become WHITE
+        cv2.THRESH_BINARY_INV,
         ADAPTIVE_BLOCK_SIZE,
         ADAPTIVE_C
     )
 
-    return binary
+    # Method 2 — Canny edge detection
+    # Canny finds boundaries based on intensity gradients
+    # threshold1=low, threshold2=high — edges between are kept
+    # if connected to strong edges
+    canny = cv2.Canny(enhanced, threshold1=30, threshold2=90)
+
+    # Fuse both — OR operation means a pixel is boundary
+    # if EITHER method detected it
+    fused = cv2.bitwise_or(adaptive, canny)
+
+    return fused

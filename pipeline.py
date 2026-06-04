@@ -56,12 +56,13 @@ def run_pipeline(image_filename, show_steps=False):
 
 
 if __name__ == "__main__":
+
     images = [
-        "A_01_01.png",
-        "A_02_01.png",
-        "A_03_01.png",
-        "B_01_01.png",
-        "B_01_02.png",
+        "A_01_01.png", "A_01_02.png", "A_01_03.png",
+        "A_02_01.png", "A_02_02.png",
+        "A_03_01.png", "A_03_02.png", "A_03_03.png",
+        "A_04_01.png", "A_04_02.png", "A_04_03.png", "A_04_04.png",
+        "B_01_01.png", "B_01_02.png", "B_01_03.png",
     ]
 
     print(f"Running pipeline on {len(images)} images...\n")

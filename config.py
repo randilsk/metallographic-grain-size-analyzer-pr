@@ -12,8 +12,8 @@ CLAHE_CLIP_LIMIT = 2.0      # contrast enhancement strength
 CLAHE_TILE_SIZE  = (8, 8)   # local region size for CLAHE
 
 # ── Stage 2: Binarization ────────────────────────────────
-ADAPTIVE_BLOCK_SIZE = 21    # local window size (must be odd)
-ADAPTIVE_C          = 4     # constant subtracted from mean
+ADAPTIVE_BLOCK_SIZE = 11    # local window size (must be odd)
+ADAPTIVE_C          = 3     # constant subtracted from mean
 
 # ── Stage 3: Morphology ──────────────────────────────────
 MORPH_KERNEL_SIZE   = (3, 3)

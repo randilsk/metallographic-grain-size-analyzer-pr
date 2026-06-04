@@ -4,8 +4,11 @@ ENV/
 env/
 .venv/
 
+output 
+output1
 # Python
 __pycache__/
+__pycache__1/
 *.py[cod]
 *$py.class
 *.so

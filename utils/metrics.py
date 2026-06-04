@@ -43,8 +43,9 @@ def compare_with_ground_truth(skeleton, image_filename):
     # Invert so boundaries become white to match our skeleton
     seg = cv2.bitwise_not(seg)
 
-    # Dilate skeleton to match ground truth boundary thickness
-    dilate_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+    # Dilate skeleton to match ground truth boundary thickness (~10px wide in GT)
+    # 11×11 ellipse provides ~5px radius coverage to properly overlap GT boundaries
+    dilate_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
     skeleton_thick = cv2.dilate(skeleton, dilate_kernel, iterations=1)
 
     # Binarize both — use skeleton_thick for pred

@@ -5,7 +5,7 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import ADAPTIVE_BLOCK_SIZE, ADAPTIVE_C
+from config import ADAPTIVE_BLOCK_SIZE, ADAPTIVE_C, CANNY_LOW, CANNY_HIGH
 
 def binarize(enhanced):
     """
@@ -29,7 +29,7 @@ def binarize(enhanced):
     # Canny finds boundaries based on intensity gradients
     # threshold1=low, threshold2=high — edges between are kept
     # if connected to strong edges
-    canny = cv2.Canny(enhanced, threshold1=30, threshold2=90)
+    canny = cv2.Canny(enhanced, threshold1=CANNY_LOW, threshold2=CANNY_HIGH)
 
     # Fuse both — OR operation means a pixel is boundary
     # if EITHER method detected it

@@ -25,13 +25,14 @@ def preprocess(image_path):
 
     # Step 3 - Bilateral filter: smooths grain interiors
     # while keeping boundary edges sharp
-    denoised = cv2.bilateralFilter(gray, d=9, sigmaColor=75, sigmaSpace=75)
+    # sigmaColor=50: tighter color similarity → smoother grain interiors, less scratch texture
+    denoised = cv2.bilateralFilter(gray, d=9, sigmaColor=50, sigmaSpace=60)
 
     # Step 4 - Unsharp masking: sharpens boundary edges
     # Works by subtracting a blurred version from the original
-    # Result: edges become crisper and more detectable
+    # Reduced coefficients (1.2/-0.2) to avoid amplifying interior texture/scratches
     blur = cv2.GaussianBlur(denoised, GAUSSIAN_KERNEL, 0)
-    unsharp = cv2.addWeighted(denoised, 1.5, blur, -0.5, 0)
+    unsharp = cv2.addWeighted(denoised, 1.2, blur, -0.2, 0)
 
     # Step 5 - CLAHE contrast enhancement
     clahe = cv2.createCLAHE(

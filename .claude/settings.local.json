@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(Get-ChildItem -Path \"d:\\\\Final Year\\\\7th Semester\\\\EE7204 - Computer Vision and Image Processing\\\\metelographic-grain-size-analyzer\" -Recurse -File -Name)"
+      "Bash(Get-ChildItem -Path \"d:\\\\Final Year\\\\7th Semester\\\\EE7204 - Computer Vision and Image Processing\\\\metelographic-grain-size-analyzer\" -Recurse -File -Name)",
+      "Bash(python pipeline.py)"
     ]
   }
 }

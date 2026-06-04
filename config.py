@@ -12,13 +12,15 @@ CLAHE_CLIP_LIMIT = 2.0      # contrast enhancement strength
 CLAHE_TILE_SIZE  = (8, 8)   # local region size for CLAHE
 
 # ── Stage 2: Binarization ────────────────────────────────
-ADAPTIVE_BLOCK_SIZE = 11    # local window size (must be odd)
-ADAPTIVE_C          = 3     # constant subtracted from mean
+ADAPTIVE_BLOCK_SIZE = 25    # local window size (must be odd); larger = less interior noise
+ADAPTIVE_C          = 5     # constant subtracted from mean; higher = stricter threshold
+CANNY_LOW           = 50    # Canny lower hysteresis threshold
+CANNY_HIGH          = 150   # Canny upper hysteresis threshold
 
 # ── Stage 3: Morphology ──────────────────────────────────
 MORPH_KERNEL_SIZE   = (3, 3)
-MIN_AREA_THRESHOLD  = 30    # remove noise smaller than this (pixels)
-PRUNE_LENGTH        = 5    # remove skeleton branches shorter than this
+MIN_AREA_THRESHOLD  = 80    # remove noise smaller than this (pixels); removes scratch artifacts
+PRUNE_LENGTH        = 3     # remove skeleton branches shorter than this
 
 # ── Stage 4: Segmentation ────────────────────────────────
 GAP_CLOSE_DISTANCE  = 10    # max pixel gap to bridge in boundaries

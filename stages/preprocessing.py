@@ -5,12 +5,13 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import GAUSSIAN_KERNEL, CLAHE_CLIP_LIMIT, CLAHE_TILE_SIZE
+from config import (GAUSSIAN_KERNEL, CLAHE_CLIP_LIMIT, CLAHE_TILE_SIZE,
+                    NLM_H, NLM_TEMPLATE_WIN, NLM_SEARCH_WIN)
 
 def preprocess(image_path):
     """
     Stage 1: Load image, convert to grayscale,
-    denoise with bilateral filter, sharpen with unsharp masking,
+    denoise with Non-Local Means, sharpen with unsharp masking,
     enhance contrast with CLAHE.
     Returns: original_bgr, grayscale, denoised, enhanced
     """
@@ -23,16 +24,23 @@ def preprocess(image_path):
     # Step 2 - Convert to grayscale
     gray = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
 
-    # Step 3 - Bilateral filter: smooths grain interiors
-    # while keeping boundary edges sharp
-    # sigmaColor=50: tighter color similarity → smoother grain interiors, less scratch texture
-    denoised = cv2.bilateralFilter(gray, d=9, sigmaColor=50, sigmaSpace=60)
+    # Step 3 - Non-Local Means Denoising
+    # NLM averages similar patches across the image, so it smooths out
+    # repetitive textures (scratches, grain interior noise) while preserving
+    # unique structures (grain boundaries). Far superior to bilateral for
+    # this use case because scratches are repetitive patterns.
+    denoised = cv2.fastNlMeansDenoising(
+        gray,
+        h=NLM_H,
+        templateWindowSize=NLM_TEMPLATE_WIN,
+        searchWindowSize=NLM_SEARCH_WIN
+    )
 
     # Step 4 - Unsharp masking: sharpens boundary edges
-    # Works by subtracting a blurred version from the original
-    # Reduced coefficients (1.2/-0.2) to avoid amplifying interior texture/scratches
+    # Using a larger sigma (via kernel size) to be more selective —
+    # sharpens large-scale boundary edges rather than fine scratches
     blur = cv2.GaussianBlur(denoised, GAUSSIAN_KERNEL, 0)
-    unsharp = cv2.addWeighted(denoised, 1.2, blur, -0.2, 0)
+    unsharp = cv2.addWeighted(denoised, 1.3, blur, -0.3, 0)
 
     # Step 5 - CLAHE contrast enhancement
     clahe = cv2.createCLAHE(

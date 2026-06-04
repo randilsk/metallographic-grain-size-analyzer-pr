@@ -5,45 +5,65 @@ import numpy as np
 import math
 import os
 import sys
+# If skimage isn't in your env, you can use cv2.ximgproc.thinning instead
+from skimage.morphology import skeletonize 
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import SEGMENTED_DIR, MICRONS_PER_PIXEL, NUM_TEST_LINES
 
-
 def compute_gt_skeleton(seg_path):
     """
-    Convert ground truth filled-region image into a boundary skeleton
-    so we can run the same ASTM analysis on it.
-    Ground truth: white = grain interior, black = boundaries.
-    We extract the boundary edges from it.
+    Convert ground truth filled-region image into a 1-pixel wide boundary skeleton.
     """
     seg = cv2.imread(seg_path, cv2.IMREAD_GRAYSCALE)
     if seg is None:
         return None
 
-    # Threshold to clean binary
     _, binary = cv2.threshold(seg, 127, 255, cv2.THRESH_BINARY)
 
-    # Extract boundaries by finding edges between grain regions
-    # Canny on the ground truth gives us the boundary lines
+    # 1. Get boundaries (Canny or simple morphological gradient)
     boundaries = cv2.Canny(binary, 10, 50)
 
-    # Dilate slightly to ensure connected boundaries
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-    boundaries = cv2.dilate(boundaries, kernel, iterations=1)
+    # 2. Convert to boolean for skimage, then skeletonize to strictly 1-pixel width
+    # This replaces the dilation step which ruins junction topology
+    bool_boundaries = boundaries > 0
+    skeleton = skeletonize(bool_boundaries)
+    
+    # Convert back to uint8 for OpenCV compatibility
+    skeleton_uint8 = (skeleton * 255).astype(np.uint8)
 
-    return boundaries, seg
+    return skeleton_uint8, seg
 
+def get_crossing_number(skel_img, x, y):
+    """
+    Calculates the Rutovitz crossing number for a pixel at (x, y) 
+    using its 3x3 neighborhood.
+    """
+    h, w = skel_img.shape
+    if x == 0 or y == 0 or x == w - 1 or y == h - 1:
+        return 2 # Ignore image borders for junctions
+
+    # Extract 3x3 neighborhood and threshold to binary 0/1
+    p = skel_img[y-1:y+2, x-1:x+2] > 127
+    
+    # Sequence of 8 neighbors going clockwise around the center pixel
+    # P9 is P1 to complete the circle
+    neighbors = [
+        p[0,1], p[0,2], p[1,2], p[2,2], 
+        p[2,1], p[2,0], p[1,0], p[0,0], p[0,1]
+    ]
+    
+    crossings = 0
+    for i in range(8):
+        crossings += abs(int(neighbors[i]) - int(neighbors[i+1]))
+        
+    return crossings // 2
 
 def analyze_ground_truth(image_filename):
-    """
-    Run ASTM intercept analysis on the ground truth segmentation.
-    Returns G number from ground truth.
-    """
     name = os.path.splitext(image_filename)[0]
     seg_path = os.path.join(SEGMENTED_DIR, f"{name}_seg.jpg")
 
     if not os.path.exists(seg_path):
-        print(f"  No ground truth found for {image_filename}")
         return None
 
     result = compute_gt_skeleton(seg_path)
@@ -53,7 +73,6 @@ def analyze_ground_truth(image_filename):
     gt_skeleton, seg = result
     h, w = gt_skeleton.shape
 
-    # Run same ASTM intercept counting on ground truth skeleton
     test_lines = []
     for i in range(1, NUM_TEST_LINES + 1):
         y = int(h * i / (NUM_TEST_LINES + 1))
@@ -62,30 +81,36 @@ def analyze_ground_truth(image_filename):
         x = int(w * i / (NUM_TEST_LINES + 1))
         test_lines.append(("V", x))
 
-    total_length_mm     = 0
-    total_intersections = 0
+    total_length_mm = 0
+    total_intersections = 0.0 # Float to handle 1.5 weights
 
     for line_type, pos in test_lines:
-        if line_type == "H":
-            line_pixels    = gt_skeleton[pos, :]
-            line_length_px = w
-        else:
-            line_pixels    = gt_skeleton[:, pos]
-            line_length_px = h
-
+        line_length_px = w if line_type == "H" else h
         line_length_mm = line_length_px * MICRONS_PER_PIXEL / 1000
+        
+        total_length_mm += line_length_mm
 
-        intersections = 0
-        in_boundary   = False
-        for px in line_pixels:
-            if px > 127 and not in_boundary:
-                intersections += 1
+        in_boundary = False
+        
+        # Iterate with an index so we know spatial coordinates for the neighborhood matrix
+        for i in range(line_length_px):
+            x = i if line_type == "H" else pos
+            y = pos if line_type == "H" else i
+            
+            px_val = gt_skeleton[y, x]
+
+            if px_val > 127 and not in_boundary:
+                # We hit a boundary! Check topology before scoring.
+                cn = get_crossing_number(gt_skeleton, x, y)
+                
+                if cn >= 3:
+                    total_intersections += 1.5 # Triple/Quadruple junction
+                else:
+                    total_intersections += 1.0 # Standard continuous edge
+                    
                 in_boundary = True
-            elif px <= 127:
+            elif px_val <= 127:
                 in_boundary = False
-
-        total_length_mm     += line_length_mm
-        total_intersections += intersections
 
     if total_intersections == 0:
         return None
